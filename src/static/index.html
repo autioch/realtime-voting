@@ -19,28 +19,12 @@
 </head>
 
 <body>
+  <ul id="restaurants"></ul>
   <ul id="history"></ul>
   <input id="message" autocomplete="off" />
   <button id="submit">Send</button>
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const messageEl = document.querySelector('#message');
-    const historyEl = document.querySelector('#history');
-
-    document.querySelector('#submit').onclick = () => {
-      socket.emit('chat message', (messageEl.value || '').trim());
-      messageEl.value = '';
-    };
-
-    socket.on('chat message', function(msg){
-      const li = document.createElement('li');
-      li.textContent = msg;
-
-      historyEl.append(li);
-    });
-
-  </script>
+  <script src="/main.js"></script>
 </body>
 
 </html>
