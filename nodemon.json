@@ -1,0 +1,7 @@
+{
+  "ignore": [
+    "backend/static"
+  ],
+  "verbose": false,
+  "ext": "js"
+}
