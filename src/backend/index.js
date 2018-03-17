@@ -29,7 +29,8 @@ module.exports = class App {
     socket.on('user:rename', (token, newNick) => this.renameUser(token, user, newNick));
     socket.on('restaurant:select', (token, restaurantId) => this.selectRestaurant(token, user, restaurantId));
 
-    socket.emit('user:token', user.token);
+    socket.emit('user:connected', user.id, user.token);
+    this.io.emit('user:added', user.id, user.nick);
     socket.emit('restaurant:list', restaurants);
     socket.emit('user:list', this.users.map(({ id, nick }) => ({
       id,
@@ -73,9 +74,9 @@ module.exports = class App {
     if (!this.validateUser(user, token)) {
       return;
     }
-    info('User disconnected', user.id, user.nick, newNick);
     user.nick = newNick;
     this.io.emit('user:renamed', user.id, newNick);
+    info('User disconnected', user.id, user.nick, newNick);
   }
 
   selectRestaurant(token, user, restaurantId) {
@@ -83,11 +84,12 @@ module.exports = class App {
       return;
     }
     this.io.emit('restaurant:selected', user.id, restaurantId);
+    info('Restaurant selected', user.nick, restaurantId);
   }
 
   exitUser(userToRemove) {
-    info('User disconnected', userToRemove.id, userToRemove.nick);
     this.users = this.users.filter((user) => user !== userToRemove);
     this.io.emit('user:exit', userToRemove.id);
+    info('User disconnected', userToRemove.id, userToRemove.nick);
   }
 };
