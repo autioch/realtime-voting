@@ -25,6 +25,7 @@ export default class App extends Component {
 
     this.socket = io('http://localhost:9090');
     this.socket.on('col:connected', this.connectCol.bind(this));
+    this.socket.on('choices', this.setChoices.bind(this));
 
     /* ROWS */
     this.socket.on('row:list', this.setRowList.bind(this));
@@ -42,6 +43,12 @@ export default class App extends Component {
       token,
       label,
       id
+    });
+  }
+
+  setChoices(choices) {
+    this.setState({
+      choices
     });
   }
 
