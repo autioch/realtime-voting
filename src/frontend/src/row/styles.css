@@ -1,0 +1,15 @@
+.row {
+  display: flex;
+  width: 100%;
+  border-bottom: solid 1px #ddd;
+}
+
+.row:hover {
+  background: #def;
+}
+
+.row__label {
+padding: .5em;
+  width: 10vw;
+  flex: none;
+}

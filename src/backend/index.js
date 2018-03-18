@@ -7,6 +7,16 @@ const restaurants = require('./restaurants');
 
 let nextId = 1;
 
+function generateToken() {
+  let token = '';
+
+  while (token.length < 20) { // eslint-disable-line no-magic-numbers
+    token += Math.random().toString();
+  }
+
+  return token;
+}
+
 module.exports = class App {
   constructor({ port }) {
     const app = express();
@@ -15,51 +25,66 @@ module.exports = class App {
 
     const server = http.Server(app);// eslint-disable-line new-cap
 
-    this.users = [];
+    this.cols = [];
     this.io = socketIo(server);
-    this.io.on('connection', (socket) => this.connectUser(socket));
+    this.io.on('connection', (socket) => this.connectCol(socket));
 
     server.listen(port, () => info(`Listening on PORT ${port}`));
   }
 
-  connectUser(socket) {
-    const user = this.addUser();
+  connectCol(socket) {
+    const col = this.addCol();
 
-    socket.on('disconnect', () => this.exitUser(user));
-    socket.on('user:rename', (token, newNick) => this.renameUser(token, user, newNick));
-    socket.on('restaurant:select', (token, restaurantId) => this.selectRestaurant(token, user, restaurantId));
+    socket.on('disconnect', () => this.removeCol(col));
+    socket.on('col:rename', this.renameCol.bind(this));
+    socket.on('row:choose', this.chooseRow.bind(this));
 
-    socket.emit('user:connected', user.id, user.token);
-    this.io.emit('user:added', user.id, user.nick);
-    socket.emit('restaurant:list', restaurants);
-    socket.emit('user:list', this.users.map(({ id, nick }) => ({
+    socket.emit('col:connected', col.id, col.token, col.label);
+    this.io.emit('col:added', col.id, col.label);
+    socket.emit('row:list', restaurants);
+    socket.emit('col:list', this.cols.map(({ id, label }) => ({
       id,
-      nick
+      label
     })));
   }
 
-  addUser() {
-    const user = {
+  addCol() {
+    const col = {
       id: nextId++, // eslint-disable-line no-plusplus
-      nick: 'Anonymous',
-      token: Math.random().toString() + Math.random().toString()
+      label: 'Anonymous',
+      token: generateToken()
     };
 
-    this.users.push(user);
+    this.cols.push(col);
 
-    info('User connected', user.id);
+    info('User connected', col.id);
 
-    return user;
+    return col;
   }
 
-  validateUser(user, offeredToken) {
-    if (user.token !== offeredToken) {
-      error('User authentication failed', user.id, user.nick);
-      empty(user.token, offeredToken);
-      const hackingUser = this.users.find((hacker) => hacker.token === offeredToken);
+  chooseRow(token, colId, rowId) {
+    if (!this.validateCol(colId, token)) {
+      return;
+    }
+    this.io.emit('row:chosen', colId, rowId);
+    info('Row chosen', colId, rowId);
+  }
+
+  validateCol(colId, token) {
+    const col = this.cols.find((column) => column.id === colId);
+
+    if (!col) {
+      error('User authentication failed - unkown user');
+
+      return false;
+    }
+    if (col.token !== token) {
+      error('User authentication failed', col.id, col.label);
+      empty(col.token, token);
+      const hackingUser = this.cols.find((hacker) => hacker.token === token);
 
       if (hackingUser) {
-        error('Hacker identified by a token', user.id, user.nick);
+        error('Hacker identified by a token', col.id, col.label);
       } else {
         error('Unkown token');
       }
@@ -70,26 +95,20 @@ module.exports = class App {
     return true;
   }
 
-  renameUser(token, user, newNick) {
-    if (!this.validateUser(user, token)) {
+  renameCol(token, colId, label) {
+    if (!this.validateCol(colId, token)) {
       return;
     }
-    user.nick = newNick;
-    this.io.emit('user:renamed', user.id, newNick);
-    info('User disconnected', user.id, user.nick, newNick);
+    const col = this.cols.find((column) => column.id === colId);
+
+    col.label = label;
+    this.io.emit('col:renamed', colId, label);
+    info('Col renamed', colId, label);
   }
 
-  selectRestaurant(token, user, restaurantId) {
-    if (!this.validateUser(user, token)) {
-      return;
-    }
-    this.io.emit('restaurant:selected', user.id, restaurantId);
-    info('Restaurant selected', user.nick, restaurantId);
-  }
-
-  exitUser(userToRemove) {
-    this.users = this.users.filter((user) => user !== userToRemove);
-    this.io.emit('user:exit', userToRemove.id);
-    info('User disconnected', userToRemove.id, userToRemove.nick);
+  removeCol(colToRemove) {
+    this.cols = this.cols.filter((col) => col !== colToRemove);
+    this.io.emit('col:removed', colToRemove.id);
+    info('Col removed', colToRemove.id, colToRemove.label);
   }
 };

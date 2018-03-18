@@ -1,0 +1,20 @@
+.cell {
+  flex-grow: 1;
+  padding: .5em;
+}
+
+.cell.is-chosen {
+  background: #bfb;
+}
+
+.cell.is-chosen.is-active {
+  background: #0f0;
+}
+
+.cell.is-active {
+  cursor: pointer;
+}
+
+.cell.is-active:not(.is-chosen):hover {
+  background: #abf;
+}

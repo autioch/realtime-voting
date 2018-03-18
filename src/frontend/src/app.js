@@ -1,129 +1,147 @@
 /* eslint-disable no-console */
+/* eslint max-len: [error, 140] */
 import React, { Component } from 'react';
 import io from 'socket.io-client';
+import Row from './row';
+import Header from './header';
+import { debounce } from 'lodash';
 
 export default class App extends Component {
   state = {
     token: '',
-    users: [],
-    nick: '',
-    id: null,
-    restaurants: [],
-    choices: {}
+    cols: [],
+    rows: [],
+    label: '',
+    choices: {},
+    id: null
   }
 
   constructor(props) {
     super(props);
 
+    this.renameCol = this.renameCol.bind(this);
+    this.chooseRow = this.chooseRow.bind(this);
+    this.emitRenameCol = debounce(this.emitRenameCol.bind(this), 500); // eslint-disable-line no-magic-numbers
+
     this.socket = io('http://localhost:9090');
-    this.socket.on('user:connected', this.connectUser.bind(this));
-    this.socket.on('user:added', this.addUser.bind(this));
-    this.socket.on('restaurant:list', this.setRestaurantList.bind(this));
-    this.socket.on('user:list', this.setUserList.bind(this));
-    this.socket.on('user:renamed', this.renameUser.bind(this));
-    this.socket.on('restaurant:selected', this.restaurantSelected.bind(this));
-    this.socket.on('user:exit', this.removeUser.bind(this));
+    this.socket.on('col:connected', this.connectCol.bind(this));
+
+    /* ROWS */
+    this.socket.on('row:list', this.setRowList.bind(this));
+    this.socket.on('row:chosen', this.rowChosen.bind(this));
+
+    /* COLUMNS */
+    this.socket.on('col:list', this.setColList.bind(this));
+    this.socket.on('col:added', this.colAdded.bind(this));
+    this.socket.on('col:renamed', this.colRenamed.bind(this));
+    this.socket.on('col:removed', this.colRemoved.bind(this));
   }
 
-  connectUser(id, token) {
-    console.log('connectUser');
+  connectCol(id, token, label) {
     this.setState({
       token,
+      label,
       id
     });
   }
 
-  addUser(id, nick) {
-    console.log('addUser');
+  /* ROWS */
+
+  setRowList(rows) {
+    console.log('SET ROWS LIST', rows);
     this.setState({
-      users: this.state.users.concat({
+      rows
+    });
+  }
+
+  rowChosen(colId, rowId) {
+    this.setState({
+      choices: {
+        ...this.state.choices,
+        [colId]: rowId
+      }
+    });
+  }
+
+  chooseRow(id) {
+    this.socket.emit('row:choose', this.state.token, this.state.id, id);
+  }
+
+  /* COLUMNS */
+
+  setColList(cols) {
+    console.log('SET COLS LIST', cols);
+    this.setState({
+      cols
+    });
+  }
+
+  colAdded(id, label) {
+    this.setState({
+      cols: this.state.cols.concat({
         id,
-        nick
+        label
       })
     });
   }
 
-  setRestaurantList(restaurantList) {
-    console.log('setRestaurantList');
+  colRenamed(id, label) {
     this.setState({
-      restaurants: restaurantList
+      cols: this.state.cols.map((us) => {
+        if (us.id !== id) {
+          return us;
+        }
+
+        return {
+          id,
+          label
+        };
+      })
     });
   }
 
-  setUserList(userList) {
-    console.log('setUserList');
-    this.setState({
-      users: userList
-    });
-  }
-
-  renameUser(id, nick) {
-    console.log('renameUser');
-    const newUsers = this.state.users.map((us) => {
-      if (us.id !== id) {
-        return us;
-      }
-
-      return {
-        id,
-        nick
-      };
-    });
+  renameCol(label) {
+    const { cols, id } = this.state;
 
     this.setState({
-      users: newUsers
+      label,
+      cols: cols.map((us) => {
+        if (us.id !== id) {
+          return us;
+        }
+
+        return {
+          id,
+          label
+        };
+      })
     });
+
+    this.emitRenameCol();
   }
 
-  restaurantSelected(userId, restaurantId) {
-    console.log('restaurantSelected');
+  emitRenameCol() {
+    this.socket.emit('col:rename', this.state.token, this.state.id, this.state.label);
+  }
 
+  colRemoved(id) {
     this.setState({
-      choices: {
-        ...this.state.choices,
-        [userId]: restaurantId
-      }
+      cols: this.state.cols.filter((col) => col.id !== id)
     });
   }
 
-  removeUser(id) {
-    console.log('removeUser');
-    this.setState({
-      users: this.state.users.filter((user) => user.id !== id)
-    });
-  }
-
-  selectRestaurant(id) {
-    console.log('selectRestaurant');
-    this.socket.emit('restaurant:select', this.state.token, id);
-  }
+  /* RENDER */
 
   render() {
-    const { restaurants, users, choices, id } = this.state;
+    const { rows, cols, choices, id } = this.state;
 
     return (
       <div className="app">
-        <div className="restaurant">
-          <div className="restaurant-label"> </div>
-          {users.map((user) =>
-            <div key={user.id} className="user">
-              <div className="user-nick">{user.nick}</div>
-            </div>
-          )}
+        <div className="row">
+          <div className="row__label"></div>
+          {cols.map((col) => <Header key={col.id} col={col} currentId={id} renameCol={this.renameCol} />)}
         </div>
-        {restaurants.map((restaurant) =>
-          <div key={restaurant.id} className="restaurant">
-            <div className="restaurant-label">{restaurant.label}</div>
-            {users.map((user) =>
-              <div
-                key={user.id}
-                className={`user ${choices[user.id] && (choices[user.id] === restaurant.id) ? 'is-chosen' : ''} ${user.id === id ? 'is-current' : ''}`}
-                onClick={user.id === id ? () => this.selectRestaurant(restaurant.id) : () => {}}
-              >
-              </div>
-            )}
-          </div>
-        )}
+        {rows.map((row) => <Row key={row.id} row={row} cols={cols} chooseRow={this.chooseRow} choices={choices} currentId={id} />)}
       </div>
     );
   }

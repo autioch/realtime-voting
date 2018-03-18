@@ -1,6 +1,7 @@
 {
   "ignore": [
-    "backend/static"
+    "backend/static",
+    "frontend"
   ],
   "verbose": false,
   "ext": "js"
