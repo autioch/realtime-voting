@@ -5,6 +5,7 @@ import io from 'socket.io-client';
 import Row from './row';
 import Header from './header';
 import { debounce } from 'lodash';
+import { recoverColCredentials, storeColCredentials } from './utils';
 
 export default class App extends Component {
   state = {
@@ -19,11 +20,14 @@ export default class App extends Component {
   constructor(props) {
     super(props);
 
+    this.exitCol = this.exitCol.bind(this);
     this.renameCol = this.renameCol.bind(this);
     this.chooseRow = this.chooseRow.bind(this);
     this.emitRenameCol = debounce(this.emitRenameCol.bind(this), 500); // eslint-disable-line no-magic-numbers
 
-    this.socket = io('http://localhost:9090');
+    this.socket = io('http://localhost:9090', {
+      query: recoverColCredentials()
+    });
     this.socket.on('col:connected', this.connectCol.bind(this));
     this.socket.on('choices', this.setChoices.bind(this));
 
@@ -38,12 +42,12 @@ export default class App extends Component {
     this.socket.on('col:removed', this.colRemoved.bind(this));
   }
 
-  connectCol(id, token, label) {
-    this.setState({
-      token,
-      label,
-      id
-    });
+  connectCol(colCredentials) {
+    this.setState(colCredentials);
+  }
+
+  componentDidUpdate() {
+    storeColCredentials(this.state);
   }
 
   setChoices(choices) {
@@ -55,7 +59,6 @@ export default class App extends Component {
   /* ROWS */
 
   setRowList(rows) {
-    console.log('SET ROWS LIST', rows);
     this.setState({
       rows
     });
@@ -77,7 +80,6 @@ export default class App extends Component {
   /* COLUMNS */
 
   setColList(cols) {
-    console.log('SET COLS LIST', cols);
     this.setState({
       cols
     });
@@ -131,6 +133,14 @@ export default class App extends Component {
     this.socket.emit('col:rename', this.state.token, this.state.id, this.state.label);
   }
 
+  exitCol() {
+    this.socket.emit('col:exit');
+    this.setState({
+      cols: [],
+      rows: []
+    });
+  }
+
   colRemoved(id) {
     this.setState({
       cols: this.state.cols.filter((col) => col.id !== id)
@@ -146,7 +156,7 @@ export default class App extends Component {
       <div className="app">
         <div className="row">
           <div className="row__label"></div>
-          {cols.map((col) => <Header key={col.id} col={col} currentId={id} renameCol={this.renameCol} />)}
+          {cols.map((col) => <Header key={col.id} col={col} currentId={id} renameCol={this.renameCol} exitCol={this.exitCol} />)}
         </div>
         {rows.map((row) => <Row key={row.id} row={row} cols={cols} chooseRow={this.chooseRow} choices={choices} currentId={id} />)}
       </div>

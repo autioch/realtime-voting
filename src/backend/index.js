@@ -13,16 +13,18 @@ module.exports = class App {
   }
 
   connectCol(socket) {
-    const col = this.cols.addCol();
+    const { handshake = {} } = socket;
+    const { query = {} } = handshake;
 
-    socket.on('disconnect', () => this.removeCol(col));
+    const col = this.cols.addCol(query);
+
+    socket.on('col:exit', () => this.removeCol(socket, col));
     socket.on('col:rename', this.renameCol.bind(this));
     socket.on('row:choose', this.chooseRow.bind(this));
 
-    socket.emit('col:connected', col.id, col.token, col.label);
-    this.io.emit('col:added', col.id, col.label);
+    socket.emit('col:connected', this.cols.getCredentials(col.id));
     socket.emit('row:list', rows);
-    socket.emit('col:list', this.cols.serializeToFrontend());
+    this.io.emit('col:list', this.cols.serializeToFrontend());
     socket.emit('choices', this.choices);
   }
 
@@ -44,7 +46,9 @@ module.exports = class App {
     info('Col renamed', colId, label);
   }
 
-  removeCol(colToRemove) {
+  removeCol(socket, colToRemove) {
+    socket.emit('row:list', []);
+    socket.emit('col:list', []);
     this.cols.removeCol(colToRemove.id);
     this.io.emit('col:removed', colToRemove.id);
     info('Col removed', colToRemove.id, colToRemove.label);

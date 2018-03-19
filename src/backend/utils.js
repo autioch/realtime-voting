@@ -1,9 +1,11 @@
-module.exports = function generateToken() {
-  let token = '';
+module.exports = {
+  generateToken() {
+    let token = '';
 
-  while (token.length < 20) { // eslint-disable-line no-magic-numbers
-    token += Math.random().toString();
+    while (token.length < 20) { // eslint-disable-line no-magic-numbers
+      token += Math.random().toString();
+    }
+
+    return token;
   }
-
-  return token;
 };
