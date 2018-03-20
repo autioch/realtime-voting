@@ -1,156 +1,99 @@
-/* eslint-disable no-console */
 /* eslint max-len: [error, 140] */
 import React, { Component } from 'react';
+import autobind from 'autobind-decorator';
 import io from 'socket.io-client';
+import { debounce } from 'lodash';
+import { recoverColCredentials, storeColCredentials, removeColCredentials, renameCol, chooseRow } from './utils';
 import Row from './row';
 import Header from './header';
-import { debounce } from 'lodash';
-import { recoverColCredentials, storeColCredentials } from './utils';
+import EVENTS from './events';
 
 export default class App extends Component {
   state = {
-    token: '',
     cols: [],
     rows: [],
-    label: '',
     choices: {},
-    id: null
+    credentials: {}
   }
 
   constructor(props) {
     super(props);
-
-    this.exitCol = this.exitCol.bind(this);
-    this.renameCol = this.renameCol.bind(this);
-    this.chooseRow = this.chooseRow.bind(this);
-    this.emitRenameCol = debounce(this.emitRenameCol.bind(this), 500); // eslint-disable-line no-magic-numbers
-
+    this.emitRenameCol = debounce(this.emitRenameCol, 500); // eslint-disable-line no-magic-numbers
     this.socket = io('http://localhost:9090', {
       query: recoverColCredentials()
     });
-    this.socket.on('col:connected', this.connectCol.bind(this));
-    this.socket.on('choices', this.setChoices.bind(this));
-
-    /* ROWS */
-    this.socket.on('row:list', this.setRowList.bind(this));
-    this.socket.on('row:chosen', this.rowChosen.bind(this));
-
-    /* COLUMNS */
-    this.socket.on('col:list', this.setColList.bind(this));
-    this.socket.on('col:added', this.colAdded.bind(this));
-    this.socket.on('col:renamed', this.colRenamed.bind(this));
-    this.socket.on('col:removed', this.colRemoved.bind(this));
+    this.socket.on(EVENTS.CHOICES, this.setChoices);
+    this.socket.on(EVENTS.ROW_LIST, this.setRowList);
+    this.socket.on(EVENTS.COL_LIST, this.setColList);
+    this.socket.on(EVENTS.COL_CONNECTED, this.connectCol);
   }
 
-  connectCol(colCredentials) {
-    this.setState(colCredentials);
+  @autobind
+  connectCol(credentials) {
+    this.setState({
+      credentials
+    });
+
+    storeColCredentials(credentials);
   }
 
-  componentDidUpdate() {
-    storeColCredentials(this.state);
-  }
-
+  @autobind
   setChoices(choices) {
     this.setState({
       choices
     });
   }
 
-  /* ROWS */
-
+  @autobind
   setRowList(rows) {
     this.setState({
       rows
     });
   }
 
-  rowChosen(colId, rowId) {
-    this.setState({
-      choices: {
-        ...this.state.choices,
-        [colId]: rowId
-      }
-    });
-  }
-
-  chooseRow(id) {
-    this.socket.emit('row:choose', this.state.token, this.state.id, id);
-  }
-
-  /* COLUMNS */
-
+  @autobind
   setColList(cols) {
     this.setState({
       cols
     });
   }
 
-  colAdded(id, label) {
-    this.setState({
-      cols: this.state.cols.concat({
-        id,
-        label
-      })
-    });
-  }
-
-  colRenamed(id, label) {
-    this.setState({
-      cols: this.state.cols.map((us) => {
-        if (us.id !== id) {
-          return us;
-        }
-
-        return {
-          id,
-          label
-        };
-      })
-    });
-  }
-
+  @autobind
   renameCol(label) {
-    const { cols, id } = this.state;
-
     this.setState({
-      label,
-      cols: cols.map((us) => {
-        if (us.id !== id) {
-          return us;
-        }
-
-        return {
-          id,
-          label
-        };
-      })
+      credentials: {
+        ...this.state.credentials,
+        label
+      },
+      cols: renameCol(this.state.cols, this.state.credentials.id, label)
     });
-
     this.emitRenameCol();
   }
 
+  @autobind
   emitRenameCol() {
-    this.socket.emit('col:rename', this.state.token, this.state.id, this.state.label);
+    this.socket.emit(EVENTS.COL_RENAME, this.state.credentials, this.state.credentials.label);
   }
 
+  @autobind
+  chooseRow(rowId) {
+    this.setState({
+      choices: chooseRow(this.state.choices, this.state.credentials.id, rowId)
+    });
+    this.socket.emit(EVENTS.ROW_CHOOSE, this.state.credentials, rowId);
+  }
+
+  @autobind
   exitCol() {
-    this.socket.emit('col:exit');
     this.setState({
-      cols: [],
-      rows: []
+      cols: []
     });
+    removeColCredentials();
+    this.socket.emit(EVENTS.COL_EXIT, this.state.credentials);
   }
-
-  colRemoved(id) {
-    this.setState({
-      cols: this.state.cols.filter((col) => col.id !== id)
-    });
-  }
-
-  /* RENDER */
 
   render() {
-    const { rows, cols, choices, id } = this.state;
+    const { rows, cols, choices, credentials: { id } } = this.state;
 
     return (
       <div className="app">

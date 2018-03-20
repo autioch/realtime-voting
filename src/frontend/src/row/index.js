@@ -4,7 +4,7 @@ import Cell from '../cell';
 import './styles.css';
 
 export default ({ row, cols, chooseRow, choices, currentId }) => (
-  <div key={row.id} className="row">
+  <div className="row">
     <div className="row__label">{row.label}</div>
     {cols.map((col) =>
       <Cell

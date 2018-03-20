@@ -1,11 +1,18 @@
+const fs = require('bluebird').promisifyAll(require('fs'));
+const { join } = require('path');
+
 module.exports = {
-  generateToken() {
-    let token = '';
 
-    while (token.length < 20) { // eslint-disable-line no-magic-numbers
-      token += Math.random().toString();
-    }
+  writeFile(fileName, data) {
+    const fullName = join(__dirname, 'db', `${fileName}.json`);
 
-    return token;
+    return fs.writeFileAsync(fullName, JSON.stringify(data, null, '  '), 'utf8');
+  },
+
+  readFile(fileName) {
+    const fullName = join(__dirname, 'db', `${fileName}.json`);
+
+    return fs.readFileAsync(fullName, 'utf8');
   }
+
 };

@@ -1,7 +1,9 @@
-export function recoverColCredentials() {
-  const colCredentials = localStorage.getItem('realtimeVoting.colCredentials');
+const LOCAL_STORAGE_KEY = 'realtimeVoting.colCredentials';
 
-  return colCredentials ? JSON.parse(colCredentials) : undefined; // eslint-disable-line no-undefined
+export function recoverColCredentials() {
+  const colCredentials = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+  return colCredentials ? JSON.parse(colCredentials) : null;
 }
 
 export function storeColCredentials({ id, label, token }) {
@@ -11,7 +13,11 @@ export function storeColCredentials({ id, label, token }) {
     token
   });
 
-  localStorage.setItem('realtimeVoting.colCredentials', colCredentials);
+  localStorage.setItem(LOCAL_STORAGE_KEY, colCredentials);
+}
+
+export function removeColCredentials() {
+  localStorage.removeItem(LOCAL_STORAGE_KEY);
 }
 
 export function objectToQueryString(obj = {}) {
@@ -19,4 +25,24 @@ export function objectToQueryString(obj = {}) {
     .entries(obj)
     .map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
     .join('&');
+}
+
+export function renameCol(cols, colId, label) {
+  return cols.map((col) => {
+    if (col.id !== colId) {
+      return col;
+    }
+
+    return {
+      ...col,
+      label
+    };
+  });
+}
+
+export function chooseRow(choices, colId, rowId) {
+  return {
+    ...choices,
+    [colId]: rowId
+  };
 }

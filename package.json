@@ -20,10 +20,12 @@
   "homepage": "https://github.com/Autioch/example-module#readme",
   "dependencies": {
     "app-module-path": "2.2.0",
-    "bluebird": "3.5.0",
+    "bluebird": "^3.5.0",
     "body-parser": "1.17.2",
     "express": "4.15.3",
+    "hat": "0.0.3",
     "nodemon": "1.11.0",
+    "on-quit": "^1.0.0",
     "qb-log": "1.0.1",
     "socket.io": "^2.0.4"
   },

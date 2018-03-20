@@ -1,3 +1,5 @@
+const { writeFile } = require('../utils');
+
 const restaurants = [{
   label: 'Labija'
 }, {
@@ -30,4 +32,6 @@ restaurants.forEach((restaurant, index) => {
   restaurant.id = index + 1;
 });
 
-module.exports = restaurants.sort((r1, r2) => r1.label.localeCompare(r2.label));
+const sorted = restaurants.sort((r1, r2) => r1.label.localeCompare(r2.label));
+
+writeFile('rows', sorted);
