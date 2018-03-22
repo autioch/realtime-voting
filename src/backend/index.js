@@ -27,9 +27,9 @@ module.exports = class App {
 
     return Bluebird
       .join(
-        this.rows.readFromFile(),
 
         // this.cols.readFromFile(),
+        this.rows.readFromFile(),
         this.choices.readFromFile()
       )
       .then(() => {
