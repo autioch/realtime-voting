@@ -43,6 +43,9 @@ export function renameCol(cols, colId, label) {
 export function chooseRow(choices, colId, rowId) {
   return {
     ...choices,
-    [colId]: rowId
+    [colId]: {
+      ...choices[colId],
+      [rowId]: true
+    }
   };
 }

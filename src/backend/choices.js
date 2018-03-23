@@ -1,14 +1,39 @@
 const { info, warn, error } = require('qb-log');
 const { writeFile, readFile } = require('./utils');
 
+function entriesToObject(entries) {
+  return entries.reduce((dict, [key, value]) => {
+    dict[key] = value;
+
+    return dict;
+  }, {});
+}
+
 module.exports = class Choices {
-  constructor() {
+  constructor({ maxChoices = 1 }) {
+    this.maxChoices = maxChoices;
     this.choices = {};
     this.id = 'choices';
   }
 
   set(key, value) {
-    this.choices[key] = value;
+    const entries = Object
+      .entries(this.choices[key])
+      .filter(([, val]) => !!val)
+      .slice(0, this.maxChoices - 1);
+
+    this.choices[key] = entriesToObject(entries);
+    this.choices[key][value] = true;
+  }
+
+  login({ id }) {
+    this.choices[id] = this.choices[id] || {};
+  }
+
+  exit({ id }) {
+    const entries = Object.entries(this.choices).filter(([key]) => key !== id);
+
+    this.choices = entriesToObject(entries);
   }
 
   readFromFile() {

@@ -53,6 +53,8 @@ module.exports = class App {
 
     info('connectCol', col.id, col.label);
 
+    this.choices.login(col);
+
     socket.on(EVENTS.COL_EXIT, (credentials) => this.exitCol(credentials, socket));
     socket.on(EVENTS.COL_RENAME, this.renameCol.bind(this));
     socket.on(EVENTS.ROW_CHOOSE, this.chooseRow.bind(this));
@@ -85,6 +87,7 @@ module.exports = class App {
   exitCol(credentials, socket) {
     info('exitCol', credentials.id, credentials.label);
     if (this.cols.verify(credentials)) {
+      this.choices.exit(credentials.id);
       this.cols.exit(credentials.id);
       this.saveDebounced();
       socket.emit(EVENTS.COL_LIST, []);
