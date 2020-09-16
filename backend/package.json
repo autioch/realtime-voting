@@ -4,20 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "start:watch": "nodemon index.js"
+    "start": "node src/index.js",
+    "start:watch": "nodemon src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Autioch/example-module.git"
+    "url": "git+https://github.com/autioch/realtime-voting.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Autioch/example-module/issues"
+    "url": "https://github.com/autioch/realtime-voting/issues"
   },
-  "homepage": "https://github.com/Autioch/example-module#readme",
+  "homepage": "https://github.com/autioch/realtime-voting#readme",
   "dependencies": {
     "app-module-path": "2.2.0",
     "babel-eslint": "^8.2.2",

@@ -6,7 +6,7 @@ const Bluebird = require('bluebird');
 const onQuit = require('on-quit/src');
 const Dimension = require('./dimension');
 const Choices = require('./choices');
-const EVENTS = require('../frontend/src/events');
+const EVENTS = require('../../frontend/src/events');
 
 const SAVE_DEBOUNCE = 5000;
 

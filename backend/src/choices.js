@@ -10,7 +10,7 @@ function entriesToObject(entries) {
 }
 
 module.exports = class Choices {
-  constructor({ maxChoices = 1 }) {
+  constructor({ maxChoices = 1 } = {}) {
     this.maxChoices = maxChoices;
     this.choices = {};
     this.id = 'choices';

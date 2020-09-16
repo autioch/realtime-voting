@@ -1,17 +1,3 @@
-# example-module
+# Realtime voting
 
-*Work in progress.*
-
-
-## Installation
-`npm i example-module`
-
-## Usage
-
-```javascript
-
-const exampleModule = require('example-module');
-
-import  exampleModule  from 'example-module';
-
-```
+Application for interactive voting.
