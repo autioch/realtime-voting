@@ -9,6 +9,10 @@ module.exports = {
     }],
     'no-unused-vars': ["error", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false }],
     'id-blacklist': ['off'],
-    'jsx-a11y/href-no-hash': ['off']
+    'jsx-a11y/href-no-hash': ['off'],
+    'no-plusplus': ['off'],
+    'id-length': ['off'],
+    'no-await-in-loop': ['off'],
+    'max-len': ['warn', 140]
   }
 };
